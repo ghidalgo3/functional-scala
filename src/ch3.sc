@@ -1,10 +1,11 @@
 sealed trait List[+A]
+
 case object Nil extends List[Nothing]
+
 case class Cons[+A](head: A, t : List[A]) extends List[A] {
   def tail : List[A] = t
 }
 object List {
-
 
   //3.7 halting product
   //I don't think its possible because the operation f() is only
@@ -48,6 +49,11 @@ object List {
     foldLeft(list, Nil: List[A])((a, b) => Cons(b, a)) // A, B => B
   }
 
+  //fold right in terms of fold left
+  def leftFoldRight[A,B](list : List[A], z : B)(f : (A,B) => B) : B = {
+    foldLeft(reverse(list), z)((a,b) => f(b,a))
+  }
+
   @annotation.tailrec
   def foldLeft[A,B](list: List[A], z : B)(f : (B,A) => B) : B = {
     list match {
@@ -55,7 +61,17 @@ object List {
       case Cons(h, t) => foldLeft(t, f(z, h))(f)
     }
   }
+
+  def flatten[A](bigList : List[List[A]]) : List[A] = {
+    foldLeft(bigList, Nil : List[A])(append)
+  }
+
+  def append[A](head : List[A], tail : List[A]) : List[A] = {
+    List.leftFoldRight(head, tail)((a,b) => Cons(a,b))
+  }
 }
+
+
 val x = List(1,2,3,4,5) match {
   case Cons(x, Cons(2, Cons(4, _))) => x
   case Nil => 42
@@ -66,8 +82,12 @@ val x = List(1,2,3,4,5) match {
 
 //3.8 what happens? nothing apparently.
 List.foldRight(List(1,2,3), Nil:List[Int])(Cons(_,_))
+List.leftFoldRight(List(1,2,3,4), 0)(_+_)
 List.length(List(1,2,3,4))
 List.leftSum(List(1,4,5))
 List.leftProduct(List(4,5))
 List.leftLength(List(1,2,3,4,5,6))
 List.reverse(List(1,2,3))
+List.append(List(1,2), List(3,4))
+List.flatten(List(List(1,2), List(3,4), Nil))
+
