@@ -160,6 +160,13 @@ object Tree {
 //  }
 }
 
+
+val nums = List(1,2,3,4,5)
+val arr = Array[Int](1,2,3,4)
+1 + 2 == 1.+(2)
+
+val sum : (Int, Int) => Int  = _ + _
+
 val exampleTree =
   Branch(
     Branch(
