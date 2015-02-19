@@ -49,19 +49,27 @@ sealed trait Stream[+A] {
     foldRight(Empty: Stream[B])((a, b) => Cons(() => m(a), () => b))
   }
 
-//  def flatMap[B](f : A => Stream[B]) : Stream[B] = {
-//    foldRight(Empty : Stream[B])
-//  }
-
-  def filter(p : A => Boolean) : Stream[A] = {
-    foldRight(Empty : Stream[A])((a, b) => if(p(a)) Cons(() => a, () => b) else b)
+  def flatMap[B](f : A => Stream[B]) : Stream[B] = {
+    foldRight(Stream.empty[B])((a,b) => f(a) append b)
   }
 
-  def append(more : => Stream[A]) : Stream[A] = {
-    foldRight(this)((a,b) => b match {
-      case Empty => Cons(() => a, () => more)
-      case _ => Cons(() => a,() => b)
-    })
+  def filter(p : A => Boolean) : Stream[A] = {
+    foldRight(Empty : Stream[A])((a, b) => if(p(a)) Stream.cons(a,b) else b)
+  }
+
+  def append[B >: A](more : => Stream[B]) : Stream[B] = {
+    foldRight(more)((a,b) => Stream.cons(a,b))
+  }
+
+  def headOption : Option[A] = {
+    this match {
+      case Cons(h,_) => Some(h())
+      case _ => None
+    }
+  }
+
+  def find(p : A => Boolean) : Option[A] = {
+    filter(p).headOption
   }
 
   def takeWhileFold(p : A => Boolean) : Stream[A] = {
@@ -75,6 +83,9 @@ sealed trait Stream[+A] {
       case _ => true
     }
   }
+
+
+
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
@@ -90,6 +101,28 @@ object Stream {
   def apply[A](as : A*) : Stream[A] = {
     if (as.isEmpty) Empty else cons(as.head, apply(as.tail:_*))
   }
-}
-Stream(1,2,3,4,5,6).append(Stream(12,3)).toList
 
+  def constant[A](a : A) : Stream[A] = {
+    lazy val stream : Stream[A] = cons(a,stream)
+    stream
+  }
+  def from(n : Int) : Stream[Int] = {
+    val stream : Stream[Int] = cons(n, from(n + 1))
+    stream
+  }
+
+  def unfold[A,S](z: S)(f : S => Option[(A,S)]) : Stream[A] = {
+    f(z) match {
+      case Some((a, s)) => cons(a, unfold(s)(f))
+      case _ => empty[A]
+    }
+  }
+
+
+//  def fib : Stream[Int] = {
+//    lazy val stream : Stream[Int] = cons(0, fib).foldRight(0)((a,b) => )
+//  }
+}
+Stream(1,2,3,4,5,6).append(Stream(12,3)).toList.headOption
+val ones : Stream[Int] = Stream.cons(1, ones)
+Stream.unfold(0)(s => if (s < 10) Option((s + 1, s+1)) else None).toList
