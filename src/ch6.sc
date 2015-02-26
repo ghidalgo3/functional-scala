@@ -97,11 +97,28 @@ def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A,B) => C): Rand[C] = {
 }
 
 def both[A,B](ra: Rand[A], rb: Rand[B]) : Rand[(A,B)] = map2(ra, rb)((_,_))
-
 val randIntDouble_ : Rand[(Int, Double)] = both(int, double)
 val randDoubleInt_ : Rand[(Double, Int)] = both(double, int)
+////6.7
+//def sequence[A](fs : List[Rand[A]]) : Rand[List[A]] = {
+//  rng => {
+//    fs.fold(unit(_))((a,b) )
+//  }
+//}
 
-//6.7
-def sequence[A](fs : List[Rand[A]]) : Rand[A] = {
-  ???
+//6.8
+def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = {
+  rng : RNG => {
+    val (a, r1) = f(rng)
+    val rb : Rand[B] = g(a)
+    return rb //wtf scala
+  }
+}
+
+def map_[A,B](s : Rand[A])(f : A => B) : Rand[B] = {
+  flatMap(s)(a => rng => (f(a), rng))
+}
+
+def map2_[A,B,C](ra: Rand[A], rb: Rand[B])(f : (A,B) => C): Rand[C] = {
+  flatMap(ra)(a => map(rb)(b => f(a, b)))
 }
